@@ -15,7 +15,7 @@ def index(request):
 def init(loop):
 	#创建web.app实例，参数为event_loop
 	app = web.Application(loop=loop)
-	#把相应的handle函数注册到webapp里，并指定对应响应类型
+	#把index函数注册到webapp里，并指定对应响应类型为get请求且访问根目录
 	app.router.add_route('GET', '/', index)
 	#创建server，并指定server地址和服务端口
 	srv = yield from loop.create_server(app.make_handler(), '127.0.0.1', 9000)
