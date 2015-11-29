@@ -1,29 +1,63 @@
-#加入logging模块; 设定logging的打印等级是info等级，这样只有logging.info可以打印到终端
 import logging; logging.basicConfig(level=logging.INFO)
-#加入需要的模块
-import asyncio, os, json, time
+import asyncio, orm, json, os, time
 from datetime import datetime
 
-from aiohttp import web
-#这是一个handle函数，用于绑定在指定的请求类型或格式上，用于响应此特定请求
-#param：request 是收到的请求
-def index(request):
-	#响应的body里是一段html，显示Awesome
-	return web.Response(body = b'<h1>Awesome</h1>')
+import aiohttp import web
+import jinja2 import Enviroment, FileSystemLoader
+
+from config import configs
+
+from coroweb import add_routes, add_static
+
+@asyncio.coroutine
+def logger_factory(app, handler):
+	@asyncio.coroutine
+	def logger(request):
+		logging.info('Requst : %s, %s' % (request.method, request.path))
+		return (yield from handler(request))
+	return logger
+
+@asyncio.coroutine
+def response_factory():
+	@asyncio.coroutine
+	def parse_data(request):
+		if request.method == 'POST':
+			if request.content_type.startswith('application/json'):
+				request.__data__ = yield from request.json()
+				logging.info('request json : %s' % str(request.__data__))
+			elif request.content_type.startswith('application/x-www-form-urlencoded'):
+				request.__data__ = yield from request.post()
+				logging.info('request form : %s' % str(request.__data__))
+		return (yield from handler(request))
+	return parse_data
+	
+def datetime_filter(t):
+    delta = int(time.time() - t)
+    if delta < 60:
+        return u'1分钟前'
+    if delta < 3600:
+        return u'%s分钟前' % (delta // 60)
+    if delta < 86400:
+        return u'%s小时前' % (delta // 3600)
+    if delta < 604800:
+        return u'%s天前' % (delta // 86400)
+    dt = datetime.fromtimestamp(t)
+    return u'%s年%s月%s日' % (dt.year, dt.month, dt.day)
 
 @asyncio.coroutine
 def init(loop):
-	#创建web.app实例，参数为event_loop
-	app = web.Application(loop=loop)
-	#把index函数注册到webapp里，并指定对应响应类型为get请求且访问根目录
-	app.router.add_route('GET', '/', index)
-	#创建server，并指定server地址和服务端口
-	srv = yield from loop.create_server(app.make_handler(), '127.0.0.1', 9000)
-	logging.info('server started at http://127.0.0.1:9000 ... ')
-	return srv
+	#创建数据库连接池，db参数传配置文件里的配置db
+	yield from orm.create_pool(loop=loop, **configs.db)
+	#middlewares设置两个中间处理函数
+	#middlewares的最后一个Handle为响应处理函数
+	app = web.Application(loop, middlewares=[
+		logger_factory, response_factory
+	])
+	init_jinja2(app, filter=dict(datetime=datetime_filter))
+	add_routes(app, 'handers')
 
-#获取到处理事件的loop
+
+
 loop = asyncio.get_event_loop()
-#init server
 loop.run_until_complete(init(loop))
 loop.run_forever()

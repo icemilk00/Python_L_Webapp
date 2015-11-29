@@ -10,11 +10,11 @@ def test(loop):
 	yield from orm.create_pool(loop = loop, user = 'www-data', password='www-data', db='awesome')
 
 	#创建User model
-	u = User(name = 'Test', email = 'test8@example.com', passwd = '123', image = 'about:blank')
+	u = User(name = 'Test', email = 'test1@example.com', passwd = '123', image = 'about:blank')
 	#同时同步到awesome数据库的users表下，插入一条user数据，对应字段的值就是u的传参
-	# yield from u.save()
+	yield from u.save()
 
-	yield from u.find('passwd')
+	# yield from u.find('passwd')
 
 #获取runloop
 loop = asyncio.get_event_loop()
