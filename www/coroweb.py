@@ -18,6 +18,57 @@ def post(path):
 		return wrapper
 	return decorator
 
+#关于inspect.Parameter 的  kind 类型有5种：
+#POSITIONAL_ONLY		只能是位置参数
+#POSITIONAL_OR_KEYWORD	可以是位置参数也可以是关键字参数
+#VAR_POSITIONAL			相当于是 *args
+#KEYWORD_ONLY			关键字参数且提供了key，相当于是 *,key
+#VAR_KEYWORD			相当于是 **kw
+
+def get_required_kw_args(fn):
+	args = []
+	params = inspect.signature(fn).parameters
+	logging.info(' %s : params = %s ' % (__name__, params))
+	for name, param in params.items():
+		if param.kind = inspect.Parameter.KEYWORD_ONLY and param.default == inspect.Parameter.empty:
+			args.append(name)	
+	return tuple(args)
+
+def get_named_kw_args(fn):
+	args = []
+	params = inspect.signature(fn).parameters
+	logging.info(' %s : params = %s ' % (__name__, params))
+	for name, param in params.items():
+		if param.kind = inspect.Parameter.KEYWORD_ONLY:
+			args.append(name)	
+	return tuple(args)
+
+def has_named_kw_args(fn):
+    params = inspect.signature(fn).parameters
+    logging.info(' %s : params = %s' % (__name__, params))
+    for name, param in params.items():
+        if param.kind == inspect.Parameter.KEYWORD_ONLY:
+            return True
+
+def has_var_kw_arg(fn):
+    params = inspect.signature(fn).parameters
+    logging.info(' %s : params = %s' % (__name__, params))
+    for name, param in params.items():
+        if param.kind == inspect.Parameter.VAR_KEYWORD:
+            return True
+
+def has_request_arg(fn):
+    sig = inspect.signature(fn)
+    params = sig.parameters
+    found = False
+    for name, param in params.items():
+        if name == 'request':
+            found = True
+            continue
+        if found and (param.kind != inspect.Parameter.VAR_POSITIONAL and param.kind != inspect.Parameter.KEYWORD_ONLY and param.kind != inspect.Parameter.VAR_KEYWORD):
+            raise ValueError('request parameter must be the last named parameter in function: %s%s' % (fn.__name__, str(sig)))
+    return found
+
 class RequestHandler(object):
 	"""docstring for RequestHandler"""
 	def __init__(self, app, fn):
@@ -30,7 +81,10 @@ class RequestHandler(object):
 		self._required_kw_args = get_required_kw_args(fn)
 
 	@asyncio.coroutine
-	def  __call__():
+	def  __call__(self, request):
+		kw = None
+		if self._has_var_kw_arg or self._has_named_kw_arg or self._required_kw_args:
+			
 		
 		
 
