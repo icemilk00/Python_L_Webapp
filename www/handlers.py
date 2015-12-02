@@ -11,6 +11,6 @@ def index(request):
 	users = yield from User.findAll()
 	logging.info('to index...')
 	return {
-		'__template__':'test.html'
+		'__template__':'test.html',
 		'users': users
 	}
