@@ -218,6 +218,7 @@ class Model(dict, metaclass = ModelMetalclass):
 				args.extend(limit)
 			else:
 				raise ValueError('Invalid limit value: %s' % str(limit))
+		logging.info('sql = %s' % sql)
 		rs = yield from select(' '.join(sql), args)
 		return [cls(**r) for r in rs]
 
