@@ -14,23 +14,32 @@ from coroweb import add_routes, add_static
 
 def init_jinja2(app, **kw):
 	logging.info('init jinja2...')
+	#初始化模板配置，包括模板运行代码的开始结束标识符，变量的开始结束标识符等
 	options = dict(
-		autoescape = kw.get('autoescape', True),
-		block_start_string = kw.get('block_start_string', '{%'),
-		block_end_string = kw.get('block_end_string', '%}'),
-		variable_start_string = kw.get('variable_start_string', '{{'),
-		variable_end_string = kw.get('variable_end_string', '}}'),
-		auto_reload = kw.get('auto_reload', True)
+		autoescape = kw.get('autoescape', True),	#是否转义设置为True，就是在渲染模板时自动把变量中的<>&等字符转换为&lt;&gt;&amp;
+		block_start_string = kw.get('block_start_string', '{%'),	#运行代码的开始标识符
+		block_end_string = kw.get('block_end_string', '%}'),		#运行代码的结束标识符
+		variable_start_string = kw.get('variable_start_string', '{{'),	#变量开始标识符
+		variable_end_string = kw.get('variable_end_string', '}}'),		#变量结束标识符
+		auto_reload = kw.get('auto_reload', True)	#Jinja2会在使用Template时检查模板文件的状态，如果模板有修改， 则重新加载模板。如果对性能要求较高，可以将此值设为False
 	)
+	#从参数中获取path字段，即模板文件的位置
 	path = kw.get('path', None)
+	#如果没有，则默认为当前文件目录下的 templates 目录
 	if path is None:
 		path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 	logging.info('set jinja2 template path: %s' % path)
+	#Environment是Jinja2中的一个核心类，它的实例用来保存配置、全局对象，以及从本地文件系统或其它位置加载模板。
+	#这里把要加载的模板和配置传给Environment，生成Environment实例
 	env = Environment(loader=FileSystemLoader(path), **options)
+	#从参数取filter字段
+	# filters: 一个字典描述的filters过滤器集合, 如果非模板被加载的时候, 可以安全的添加filters或移除较早的.
 	filters = kw.get('filters', None)
+	#如果有传入的过滤器设置，则设置为env的过滤器集合
 	if filters is not None:
 		for name, f in filters.items():
 			env.filters[name] = f
+	#给webapp设置模板
 	app['__templating__'] = env
 
 @asyncio.coroutine
@@ -117,14 +126,20 @@ def init(loop):
 	app = web.Application(loop=loop, middlewares=[
 		logger_factory, response_factory
 	])
+	#初始化jinja2模板
 	init_jinja2(app, filters=dict(datetime=datetime_filter))
+	#添加请求的handlers，即各请求相对应的处理函数
 	add_routes(app, 'handlers')
+	#添加静态文件所在地址
 	add_static(app)
+	#启动
 	srv = yield from loop.create_server(app.make_handler(), '127.0.0.1', 9000)
 	logging.info('server started at http://127.0.0.1:9000...')
 	return srv
 
 
+#入口，固定写法
+#获取eventloop然后加入运行事件
 loop = asyncio.get_event_loop()
 loop.run_until_complete(init(loop))
 loop.run_forever()
