@@ -1,4 +1,4 @@
-
+#默认配置文件
 configs = {
 	'debug' : True,
 	'db' : {

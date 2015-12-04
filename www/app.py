@@ -42,6 +42,7 @@ def init_jinja2(app, **kw):
 	#给webapp设置模板
 	app['__templating__'] = env
 
+#在正式处理之前打印日志
 @asyncio.coroutine
 def logger_factory(app, handler):
 	@asyncio.coroutine
@@ -63,42 +64,59 @@ def data_factory(app, handler):
 				logging.info('request form : %s' % str(request.__data__))
 		return (yield from handler(request))
 	return parse_data
-	
+
+#响应处理
 @asyncio.coroutine
 def response_factory(app, handler):
 	@asyncio.coroutine
 	def response(request):
 		logging.info('Response handler...')
+		#调用相应的handler处理request
 		r = yield from handler(request)
+		logging.info('r = %s' % str(r))
+		#如果响应结果为web.StreamResponse类，则直接把它作为响应返回
 		if isinstance(r, web.StreamResponse):
 			return r
+		#如果响应结果为字节流，则把字节流塞到response的body里，设置响应类型为流类型，返回
 		if isinstance(r, bytes):
 			resp = web.Response(body=r)
 			resp.content_type = 'application/octet-stream'
 			return resp
+		#如果响应结果为字符串
 		if isinstance(r, str):
+			#先判断是不是需要重定向，是的话直接用重定向的地址重定向
 			if r.startswith('redirect:'):
 				return web.HTTPFound(r[9:])
+			#不是重定向的话，把字符串当做是html代码来处理
 			resp = web.Response(body=r.encode('utf-8'))
 			resp.content_type = 'text/html;charset=utf-8'
 			return resp
+		#如果响应结果为字典
 		if isinstance(r, dict):
+			#先查看一下有没有'__template__'为key的值
 			template = r.get('__template__')
+			#如果没有，说明要返回json字符串，则把字典转换为json返回，对应的response类型设为json类型
 			if template is None:
 				resp = web.Response(body=json.dumps(r, ensure_ascii=False, default=lambda o: o.__dict__).encode('utf-8'))
 				resp.content_type = 'application/json;charset=utf-8'
 				return resp
 			else:
+				#如果有'__template__'为key的值，则说明要套用jinja2的模板，'__template__'Key对应的为模板网页所在位置
 				resp = web.Response(body=app['__templating__'].get_template(template).render(**r).encode('utf-8'))
 				resp.content_type = 'text/html;charset=utf-8'
+				#以html的形式返回
 				return resp
-		if isinstance(r, int) and t >= 100 and t < 600:
+		#如果响应结果为int
+		if isinstance(r, int) and r >= 100 and r < 600:
 			return web.Response(t)
+		#如果响应结果为tuple且数量为2
 		if isinstance(r, tuple) and len(r) == 2:
 			t, m = r
+			#如果tuple的第一个元素是int类型且在100到600之间，这里应该是认定为t为http状态码，m为错误描述
+			#或者是服务端自己定义的错误码+描述
 			if isinstance(t, int) and t >= 100 and t < 600:
-				return web.Response(t, str(m))
-			# default:
+				return web.Response(status = t, text= str(m))
+			# default: 默认直接以字符串输出
 			resp = web.Response(body=str(r).encode('utf-8'))
 			resp.content_type = 'text/plain;charset=utf-8'
 			return resp
@@ -122,7 +140,9 @@ def init(loop):
 	#创建数据库连接池，db参数传配置文件里的配置db
 	yield from orm.create_pool(loop=loop, **configs.db)
 	#middlewares设置两个中间处理函数
-	#middlewares的最后一个Handle为响应处理函数
+	#middlewares中的每个factory接受两个参数，app 和 handler（即middlewares中得下一个handler）
+	#譬如这里logger_factory的handler参数其实就是response_factory()
+	#middlewares的最后一个元素的Handler会通过routes查找到相应的，其实就是routes注册的对应handler
 	app = web.Application(loop=loop, middlewares=[
 		logger_factory, response_factory
 	])

@@ -10,6 +10,8 @@ logging.basicConfig(level=logging.DEBUG)
 def index(request):
 	users = yield from User.findAll()
 	logging.info('to index...')
+	# return (404, 'not found')
+
 	return {
 		'__template__':'test.html',
 		'users': users
