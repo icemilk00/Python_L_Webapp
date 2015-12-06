@@ -7,7 +7,7 @@ from models import User, Comment, Blog, next_id
 logging.basicConfig(level=logging.DEBUG)
 
 @get('/')
-def index(request):
+def index(**kw):
 	users = yield from User.findAll()
 	logging.info('to index...')
 	# return (404, 'not found')
