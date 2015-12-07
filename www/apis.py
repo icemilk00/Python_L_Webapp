@@ -1,6 +1,7 @@
 
 import json, logging, inspect, functools
 
+#简单的几个api错误异常类，用于跑出异常
 class APIError(Exception):
 	def __init__(self, error, data ='', message=''):
 		super(APIError, self).__init__(message)

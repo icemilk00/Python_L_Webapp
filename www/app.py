@@ -69,7 +69,7 @@ def data_factory(app, handler):
 #总结下来一个请求在服务端收到后的方法调用顺序是:
 #     	logger_factory->response_factory->RequestHandler().__call__->get或post->handler
 #那么结果处理的情况就是:
-#     	先由handler构造出要返回的具体对象
+#     	由handler构造出要返回的具体对象
 #		然后在这个返回的对象上加上'__method__'和'__route__'属性，以标识别这个对象并使接下来的程序容易处理
 #		RequestHandler目的就是从URL函数中分析其需要接收的参数，从request中获取必要的参数，调用URL函数,然后把结果返回给response_factory
 #		response_factory在拿到经过处理后的对象，经过一系列对象类型和格式的判断，构造出正确web.Response对象，以正确的方式返回给客户端
