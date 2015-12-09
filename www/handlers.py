@@ -29,6 +29,30 @@ def user2cookie(user, max_age):
 	#用-隔开，返回
 	return '-'.join(L)
 
+@asyncio.coroutine
+def cookie2user(cookie_str):
+	if not cookie_str:
+		return None
+	try:
+		L = cookie_str.split('-')
+		if len(L) != 3:
+			return None
+		uid, expires, sha1 = L
+		if int(expires) < time.time():
+			return None
+		user = yield from User.find(uid)
+		if user is None:
+			return None
+		s = '%s-%s-%s-%s' % (uid, user.passwd, expires, _COOKIE_KEY)
+		if sha1 != hashlib.sha1(s.encode('utf-8')).hexdigest():
+			logging.info('invalid sha1')
+			return None
+		user.passwd = '******'
+		return user
+	except Exception as e:
+		logging.excepetion(e)
+		return None
+
 @get('/')
 def index(request):
 	summary = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
@@ -79,6 +103,12 @@ def register():
 		'__template__': 'register.html'
 	}
 
+@get('/signin')
+def signin():
+	return {
+		'__template__':'signin.html'
+	}
+
 
 @post('/api/users')
 def api_register_user(*, email, name, passwd):
@@ -118,3 +148,32 @@ def api_register_user(*, email, name, passwd):
 	#把对象转换成json格式返回
 	r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
 	return r
+
+@post('/api/authenticate')
+def authenticate(*, email, passwd):
+	if not email:
+		raise APIValueError('email', 'Invalid email')
+	if not passwd:
+		raise APIValueError('passwd', 'Invalid  passwd')
+	users = yield from User.findAll('email=?', [email])
+	if len(users) == 0:
+		raise APIValueError('email', 'email not exist')
+	user = users[0]
+
+	sha1 = hashlib.sha1()
+	sha1.update(user.id.encode('utf-8'))
+	sha1.update(b':')
+	sha1.update(passwd.encode('utf-8'))
+	if user.passwd != sha1.hexdigest():
+		raise APIValueError('passwd', 'Invalid passwd')
+	r = web.Response()
+	r.set_cookie(COOKIE_NAME, user2cookie(user, 86400), max_age=86400, httponly=True)
+	user.passwd = '******'
+	r.content_type = 'application/json'
+	r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
+	return r
+
+
+
+
+
