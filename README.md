@@ -19,3 +19,7 @@ This is a Demo only for learning python
 
 由于你用的uikit版本和教程里的uikit版本不一样导致static目录下的文件不一样，你在提交表单时，代码里要加载的js文件，其实你的static目录里根本没有，导致加载不上，而运行失败。  
 解决办法就是把教程github上的源代码static目录覆盖掉你的static，保证你的static目录和教程的static目录里文件一样。  
+
+2.在Day11的教程中，会遇到创建博客日志需要登录，登录完后创建仍需登录的问题：
+
+由于是需要管理员才能创建日志的，所以你需要新注册一个用户，并且在代码中写判断，如果是管理员的邮箱的话，在插入user表的时候，把admin字段设为YES就ok了
