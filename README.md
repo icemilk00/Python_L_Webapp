@@ -23,3 +23,29 @@ This is a Demo only for learning python
 2.在Day11的教程中，会遇到创建博客日志需要登录，登录完后创建仍需登录的问题：
 
 由于是需要管理员才能创建日志的，所以你需要新注册一个用户，并且在代码中写判断，如果是管理员的邮箱的话，在插入user表的时候，把admin字段设为YES就ok了
+
+2.实践项目中，最后会遇到首页，点击下一页，但是无响应的问题，就是跳转不了页数：
+
+需要在handlers.py中的 index(*, page='1') 函数中的 page = Page(num) 改成 page = Page(num, page_index)
+
+	#首页，会显示博客列表
+	@get('/')
+	def index(*, page='1'):
+		#获取到要展示的博客页数是第几页
+		page_index = get_page_index(page)
+		#查找博客表里的条目数
+		num = yield from Blog.findNumber('count(id)')
+		#通过Page类来计算当前页的相关信息
+		page = Page(num, page_index)
+		#如果表里没有条目，则不需要系那是
+		if num == 0:
+			blogs = []
+		else:
+			#否则，根据计算出来的offset(取的初始条目index)和limit(取的条数)，来取出条目
+			blogs = yield from Blog.findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
+			#返回给浏览器
+		return {
+			'__template__': 'blogs.html',
+			'page': page,
+			'blogs': blogs
+		}
