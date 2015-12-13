@@ -30,6 +30,7 @@ def create_pool(loop, **kw):
 def select(sql, args, size=None):
 	global __pool
 	#从连接池取一个conn出来，with..as..会在运行完后把conn放回连接池
+	logging.info('select = %s and args = %s' % (sql, args))
 	with (yield from __pool) as conn:
 		#获取一个cursor，通过aiomysql.DictCursor获取到的cursor在返回结果时会返回一个字典格式
 		cur = yield from conn.cursor(aiomysql.DictCursor)
@@ -193,6 +194,7 @@ class Model(dict, metaclass = ModelMetalclass):
 
 		return value
 
+	#查询所有，可以设定查询顺序'order by', 查询条数'limit'
 	@classmethod
 	@asyncio.coroutine
 	def findAll(cls, where=None, args=None, **kw):
@@ -222,7 +224,7 @@ class Model(dict, metaclass = ModelMetalclass):
 		rs = yield from select(' '.join(sql), args)
 		return [cls(**r) for r in rs]
 
-
+	#查询某个条件下的数据有多少条
 	@classmethod
 	@asyncio.coroutine
 	def findNumber(cls, selectField, where=None, args=None):
