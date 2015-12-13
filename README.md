@@ -12,6 +12,7 @@ This is a Demo only for learning python
 [aiomysql官方文档](http://aiomysql.readthedocs.org/en/latest/)  
 [jinja2官方文档](http://docs.jinkan.org/docs/jinja2/)  
 [uikit官方文档](http://www.getuikit.net/docs/documentation_get-started.html)  
+[flask官方文档](http://dormousehole.readthedocs.org/en/latest/)  
 
 遇到的一些问题
 ===
@@ -22,7 +23,7 @@ This is a Demo only for learning python
 
 2.在Day11的教程中，会遇到创建博客日志需要登录，登录完后创建仍需登录的问题：
 ---
-由于是需要管理员才能创建日志的，所以你需要新注册一个用户，并且在代码中写判断，如果是管理员的邮箱的话，在插入user表的时候，把admin字段设为YES就ok了
+由于是需要管理员才能创建日志的，所以你需要新注册一个管理员用户，可以在代码中写判断，如果是管理员的邮箱的话，在插入user表的时候，把admin字段设为YES就ok了。或者直接手动在数据库中添加条目，并把admin字段设为YES
 
 3.实践项目中，最后会遇到首页，点击下一页，但是无响应的问题，就是跳转不了页数：
 ---
@@ -49,3 +50,12 @@ This is a Demo only for learning python
 			'page': page,
 			'blogs': blogs
 		}
+
+
+其实之前还遇到很多问题，但是由于没有及时记录已经忘记好多，如果有缘分能再遇到的话，会及时记录到这里
+
+总结
+===
+廖老师的教程是很棒的一篇教程，尤其在实践部分的代码，是有很干得代码，包括封装思路，模块解耦，代码设计等，而且实践里的orm模块和web框架都是自己写的，能让初学者学到除了python语法之外的很多东西。十分推荐。  
+
+
